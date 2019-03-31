@@ -11,6 +11,6 @@
 #include <string.h>
 #include "def.h"
 
-int upload(const char *src_path_ptr, const char *dst_path_ptr, const char *user_pwd_ptr);
+int upload(int is_sftp, const char *src_file_path_ptr, const char *dst_dir_path_ptr, const char *relative_dst_file_path_ptr, const char *user_pwd_ptr);
 
 #endif //FTPUPLOAD_CURLFTP_H

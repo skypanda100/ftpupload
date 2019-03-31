@@ -28,6 +28,7 @@ typedef struct st_conf
     char src_dir[1024];
     char dst_dir[1024];
     char user_pwd[128];
+    int is_sftp;
 }conf;
 
 typedef struct st_notification

@@ -55,21 +55,21 @@ static void absolute_path(const notification *ntf_ptr, const struct inotify_even
 static void handle_notify(const conf *cf_ptr, const notification *ntf_ptr, const struct inotify_event *event_ptr)
 {
     char src_file_path[PATH_MAX] = {0};
-    char dst_file_path[PATH_MAX] = {0};
+    char relative_dst_file_path[PATH_MAX] = {0};
     absolute_path(ntf_ptr, event_ptr, src_file_path);
     if(strlen(src_file_path) > 0)
     {
-        sprintf(dst_file_path, "%s/%s", cf_ptr->dst_dir, src_file_path + strlen(cf_ptr->src_dir));
+        strcpy(relative_dst_file_path, src_file_path + strlen(cf_ptr->src_dir));
         printf("after 3 seconds upload %s!\n", src_file_path);
         sleep(3);   // 待文件稳定后再上传
-        int code = upload(src_file_path, dst_file_path, cf_ptr->user_pwd);
+        int code = upload(cf_ptr->is_sftp, src_file_path, cf_ptr->dst_dir, relative_dst_file_path, cf_ptr->user_pwd);
         if(code == UPLOAD_FAILED)
         {
             for(int try_no = 0;try_no < RETRY_MAX;try_no++)
             {
                 printf("%d retry: after 10 seconds upload file again, max retry number is %d!\n", try_no, RETRY_MAX);
                 sleep(10);
-                code = upload(src_file_path, dst_file_path, cf_ptr->user_pwd);
+                code = upload(cf_ptr->is_sftp, src_file_path, cf_ptr->dst_dir, relative_dst_file_path, cf_ptr->user_pwd);
                 if(code == UPLOAD_OK || code == FILE_NOT_EXISTS)
                 {
                     break;

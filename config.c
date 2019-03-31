@@ -41,6 +41,7 @@ void config(conf *conf_ptr, char *conf_path_ptr)
     char val_src_dir[1024] = {0};
     char val_dst_dir[1024] = {0};
     char val_user_pwd[128] = {0};
+    int is_sftp = 0;
     char *buf, *c;
     char buf_i[1024], buf_o[1024];
     FILE *fp;
@@ -92,6 +93,19 @@ void config(conf *conf_ptr, char *conf_path_ptr)
                         strcpy(val_dst_dir, val_o);
                     free(val_o);
                     val_o = NULL;
+
+                    // check protocol
+                    if(strncmp("sftp:", val_dst_dir, 5) == 0)
+                    {
+                        is_sftp = 1;
+                    }
+                    else if(strncmp("ftp:", val_dst_dir, 4) == 0)
+                    {
+                        is_sftp = 0;
+                    } else{
+                        fprintf(stderr, "only ftp or sftp available!\n");
+                        exit(-1);
+                    }
                 }
             }
             else if(strcmp(key, key_user_pwd) == 0)
@@ -124,4 +138,5 @@ void config(conf *conf_ptr, char *conf_path_ptr)
     strcpy(conf_ptr->src_dir, val_src_dir);
     strcpy(conf_ptr->dst_dir, val_dst_dir);
     strcpy(conf_ptr->user_pwd, val_user_pwd);
+    conf_ptr->is_sftp = is_sftp;
 }
