@@ -4,7 +4,7 @@
 
 int main(int argc,char **argv)
 {
-//    daemon(0, 0);
+//    daemon(0, 1);
 
     if(argc == 2)
     {
@@ -14,6 +14,10 @@ int main(int argc,char **argv)
 
         // watch the path and upload
         watch(&cf);
+    }
+    else
+    {
+        perror("argument error, please input absolute path of conf file!\n");
     }
 
     return 0;

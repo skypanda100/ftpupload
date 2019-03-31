@@ -76,6 +76,14 @@ static void handle_notify(const conf *cf_ptr, const notification *ntf_ptr, const
                 }
             }
         }
+        else if(code == UPLOAD_OK)
+        {
+            printf("upload file successfully!\n");
+        }
+        else if(code == FILE_NOT_EXISTS)
+        {
+            printf("file is not exist!\n");
+        }
     }
 }
 

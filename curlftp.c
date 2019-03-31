@@ -17,6 +17,7 @@ int upload(const char *src_path_ptr, const char *dst_path_ptr, const char *user_
     }
     fseek(fp, 0L, SEEK_END);
     file_size = ftell(fp);
+    printf("file name is %s, file size is %ld\n", src_path_ptr, file_size);
     fseek(fp, 0L, SEEK_SET);
 
     curl_global_init(CURL_GLOBAL_DEFAULT);
