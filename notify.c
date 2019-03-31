@@ -6,7 +6,7 @@
 
 static char dirs[DIR_MAX][PATH_MAX];
 static int dirs_len = 0;
-static size_t flags = IN_CLOSE_WRITE | IN_MOVED_TO;
+static size_t flags = IN_CREATE | IN_CLOSE_WRITE | IN_MOVED_TO;
 
 static void list_dir(const char *path_ptr)
 {
@@ -39,6 +39,31 @@ static void list_dir(const char *path_ptr)
     }
     closedir(d_ptr);
 }
+
+static void absolute_path(const notification *ntf_ptr, const struct inotify_event *event_ptr, char *new_path_ptr)
+{
+    for(int i = 0;i < ntf_ptr->dir_watch_ptr_len;i++)
+    {
+        if(event_ptr->wd == ntf_ptr->dir_watch_ptr[i].wd)
+        {
+            sprintf(new_path_ptr, "%s/%s", ntf_ptr->dir_watch_ptr[i].wpath, event_ptr->name);
+            break;
+        }
+    }
+}
+
+static void handle_notify(const conf *cf_ptr, const notification *ntf_ptr, const struct inotify_event *event_ptr)
+{
+    char src_file_path[PATH_MAX] = {0};
+    char dst_file_path[PATH_MAX] = {0};
+    absolute_path(ntf_ptr, event_ptr, src_file_path);
+    if(strlen(src_file_path) > 0)
+    {
+        sprintf(dst_file_path, "%s/%s", cf_ptr->dst_dir, src_file_path + strlen(cf_ptr->src_dir));
+        upload(src_file_path, dst_file_path, cf_ptr->user_pwd);
+    }
+}
+
 
 int add_dir_to_watch_list(notification *ntf_ptr, const char *path_ptr)
 {
@@ -90,8 +115,6 @@ void watch(const conf *cf_ptr)
 
     for(;;)
     {
-        sleep(1);
-
         char *temp_buf_ptr = NULL;
         char buf[BUF_LEN] = {0};
         size_t read_len = 0;
@@ -115,29 +138,24 @@ void watch(const conf *cf_ptr)
                     if(event_ptr->name[0] != '.')
                     {
                         char new_path[PATH_MAX] = {0};
-                        int parent_wd = event_ptr->wd;
-                        for(int i = 0;i < ntf.dir_watch_ptr_len;i++)
+                        absolute_path(&ntf, event_ptr, new_path);
+                        if(strlen(new_path) > 0)
                         {
-                            if(parent_wd == ntf.dir_watch_ptr[i].wd)
-                            {
-                                sprintf(new_path, "%s/%s", ntf.dir_watch_ptr[i].wpath, event_ptr->name);
-                                break;
-                            }
+                            add_dir_to_watch_list(&ntf, new_path);
                         }
-                        add_dir_to_watch_list(&ntf, new_path);
                     }
                 }
             }
             else
             {
-                if(event_ptr->mask & flags)
+                if(event_ptr->mask & (IN_CLOSE_WRITE | IN_MOVED_TO))
                 {
                     if(event_ptr->len > 0)
                     {
                         //ignore hidden file
                         if(event_ptr->name[0] != '.')
                         {
-                            printf("%s\n", event_ptr->name);
+                            handle_notify(cf_ptr, &ntf, event_ptr);
                         }
                     }
                 }

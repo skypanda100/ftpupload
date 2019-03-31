@@ -14,6 +14,7 @@
 #include <sys/stat.h>
 #include <time.h>
 #include "def.h"
+#include "curlftp.h"
 
 int add_dir_to_watch_list(notification *ntf_ptr, const char *path_ptr);
 void watch(const conf *cf_ptr);
