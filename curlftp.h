@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <curl/curl.h>
 #include <string.h>
+#include "def.h"
 
 int upload(const char *src_path_ptr, const char *dst_path_ptr, const char *user_pwd_ptr);
 

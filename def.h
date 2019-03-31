@@ -6,11 +6,17 @@
 #define FTPUPLOAD_DEF_H
 
 #include <sys/time.h>
+#include <limits.h>
 
 #define BUF_LEN 1024
-#define DEPTH 64
-#define DIR_MAX 256
-#define PATH_MAX 4096
+#define RETRY_MAX 5
+
+enum UPLOAD_CODE {
+    UPLOAD_OK = 1,
+    FILE_NOT_EXISTS,
+    UPLOAD_FAILED
+};
+
 typedef struct st_dir_watch
 {
     int wd;

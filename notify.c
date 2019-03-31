@@ -4,11 +4,9 @@
 
 #include "notify.h"
 
-static char dirs[DIR_MAX][PATH_MAX];
-static int dirs_len = 0;
 static size_t flags = IN_CREATE | IN_CLOSE_WRITE | IN_MOVED_TO;
 
-static void list_dir(const char *path_ptr)
+static void list_dir(const char *path_ptr, char ***dir_ptr_ptr_ptr, size_t *dirs_len_ptr)
 {
     DIR *d_ptr;
     struct dirent *file_ptr;
@@ -33,8 +31,10 @@ static void list_dir(const char *path_ptr)
 
         if(stat(full_path, &st) >= 0 && S_ISDIR(st.st_mode))
         {
-            strcpy(dirs[dirs_len++], full_path);
-            list_dir(full_path);
+            *dirs_len_ptr += 1;
+            *dir_ptr_ptr_ptr = realloc(*dir_ptr_ptr_ptr, sizeof(char *) * (*dirs_len_ptr));
+            (*dir_ptr_ptr_ptr)[*dirs_len_ptr - 1] = strdup(full_path);
+            list_dir(full_path, dir_ptr_ptr_ptr, dirs_len_ptr);
         }
     }
     closedir(d_ptr);
@@ -60,7 +60,22 @@ static void handle_notify(const conf *cf_ptr, const notification *ntf_ptr, const
     if(strlen(src_file_path) > 0)
     {
         sprintf(dst_file_path, "%s/%s", cf_ptr->dst_dir, src_file_path + strlen(cf_ptr->src_dir));
-        upload(src_file_path, dst_file_path, cf_ptr->user_pwd);
+        printf("after 3 seconds upload %s!\n", src_file_path);
+        sleep(3);   // 待文件稳定后再上传
+        int code = upload(src_file_path, dst_file_path, cf_ptr->user_pwd);
+        if(code == UPLOAD_FAILED)
+        {
+            for(int try_no = 0;try_no < RETRY_MAX;try_no++)
+            {
+                printf("%d retry: after 10 seconds upload file again, max retry number is %d!\n", try_no, RETRY_MAX);
+                sleep(10);
+                code = upload(src_file_path, dst_file_path, cf_ptr->user_pwd);
+                if(code == UPLOAD_OK || code == FILE_NOT_EXISTS)
+                {
+                    break;
+                }
+            }
+        }
     }
 }
 
@@ -104,12 +119,22 @@ void watch(const conf *cf_ptr)
     int wd = add_dir_to_watch_list(&ntf, cf_ptr->src_dir);
     if(wd != -1)
     {
-        memset(dirs, 0, sizeof(dirs) / sizeof(char));
-        dirs_len = 0;
-        list_dir(cf_ptr->src_dir);
-        for(int j = 0; j < dirs_len;j++)
+        size_t dirs_len = 0;
+        char **dir_ptr_ptr = NULL;
+        list_dir(cf_ptr->src_dir, &dir_ptr_ptr, &dirs_len);
+        for(int i = 0; i < dirs_len;i++)
         {
-            add_dir_to_watch_list(&ntf, dirs[j]);
+            add_dir_to_watch_list(&ntf, dir_ptr_ptr[i]);
+            printf("sub dir is %s\n", dir_ptr_ptr[i]);
+        }
+        // free
+        if(dirs_len > 0)
+        {
+            for(int i = 0; i < dirs_len;i++)
+            {
+                free(dir_ptr_ptr[i]);
+            }
+            free(dir_ptr_ptr);
         }
     }
 
