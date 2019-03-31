@@ -2,8 +2,8 @@
 // Created by zhengdongtian on 19-3-30.
 //
 
-#ifndef FNOTIFY_DEF_H
-#define FNOTIFY_DEF_H
+#ifndef FTPUPLOAD_DEF_H
+#define FTPUPLOAD_DEF_H
 
 #include <sys/time.h>
 
@@ -11,26 +11,24 @@
 #define DEPTH 64
 #define DIR_MAX 256
 #define PATH_MAX 4096
-typedef struct watch
+typedef struct st_dir_watch
 {
     int wd;
     char wpath[PATH_MAX];
-}s_watch;
+}dir_watch;
 
-typedef struct conf
+typedef struct st_conf
 {
-    char path[PATH_MAX];
-    char cmd[PATH_MAX];
-    int delay;
-}s_conf;
+    char src_dir[1024];
+    char dst_dir[1024];
+    char user_pwd[128];
+}conf;
 
-typedef struct notify
+typedef struct st_notification
 {
-    s_conf conf;
     int notify_fd;
-    s_watch *s_watch_p;
-    int s_watch_p_len;
-    time_t time;
-}s_notify;
+    dir_watch *dir_watch_ptr;
+    int dir_watch_ptr_len;
+}notification;
 
-#endif //FNOTIFY_DEF_H
+#endif //FTPUPLOAD_DEF_H

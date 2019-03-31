@@ -2,8 +2,8 @@
 // Created by zhengdongtian on 19-3-30.
 //
 
-#ifndef FNOTIFY_CONFIG_H
-#define FNOTIFY_CONFIG_H
+#ifndef FTPUPLOAD_CONFIG_H
+#define FTPUPLOAD_CONFIG_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,8 +13,6 @@
 #include <errno.h>
 #include "def.h"
 
-#define KEY_VALUE_LEN PATH_MAX
+void config(conf *conf_ptr, char *conf_path_ptr);
 
-void config(char *conf);
-
-#endif //FNOTIFY_CONFIG_H
+#endif //FTPUPLOAD_CONFIG_H

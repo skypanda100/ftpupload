@@ -4,215 +4,147 @@
 
 #include "notify.h"
 
-extern s_notify *s_notify_p;
-extern int s_notify_p_len;
-
 static char dirs[DIR_MAX][PATH_MAX];
 static int dirs_len = 0;
 static size_t flags = IN_CLOSE_WRITE | IN_MOVED_TO;
 
-static void list_dir(char* path, int depth)
+static void list_dir(const char *path_ptr)
 {
-    DIR *d;
-    struct dirent *file;
+    DIR *d_ptr;
+    struct dirent *file_ptr;
     struct stat st;
     char full_path[PATH_MAX] = {0};
 
-    if(!(d = opendir(path)))
+    if(!(d_ptr = opendir(path_ptr)))
     {
-        printf("opendir failed[%s]\n", path);
+        printf("opendir failed[%s]\n", path_ptr);
         return;
     }
 
-    while((file = readdir(d)) != NULL)
+    while((file_ptr = readdir(d_ptr)) != NULL)
     {
-        if(strncmp(file->d_name, ".", 1) == 0)
+        if(strncmp(file_ptr->d_name, ".", 1) == 0)
         {
             continue;
         }
 
         memset(full_path, 0, sizeof(full_path) / sizeof(char));
-        sprintf(full_path, "%s/%s", path, file->d_name);
+        sprintf(full_path, "%s/%s", path_ptr, file_ptr->d_name);
 
-        if(stat(full_path, &st) >= 0 && S_ISDIR(st.st_mode) && depth <= DEPTH)
+        if(stat(full_path, &st) >= 0 && S_ISDIR(st.st_mode))
         {
             strcpy(dirs[dirs_len++], full_path);
-            list_dir(full_path, depth + 1);
+            list_dir(full_path);
         }
     }
-    closedir(d);
+    closedir(d_ptr);
 }
 
-void handle_notify(s_notify *ntf, struct inotify_event *event)
+int add_dir_to_watch_list(notification *ntf_ptr, const char *path_ptr)
 {
-    if(event->mask & IN_ISDIR)
-    {
-        if(event->len > 0)
-        {
-            //ignore hidden file
-            if(event->name[0] != '.')
-            {
-                char new_path[PATH_MAX] = {0};
-                int parent_wd = event->wd;
-                for(int i = 0;i < ntf->s_watch_p_len;i++)
-                {
-                    if(parent_wd == ntf->s_watch_p[i].wd)
-                    {
-                        sprintf(new_path, "%s/%s", ntf->s_watch_p[i].wpath, event->name);
-                        break;
-                    }
-                }
-                notify_dir(ntf, new_path);
-            }
-        }
-    }
-    else
-    {
-        if(event->mask & flags)
-        {
-            if(event->len > 0)
-            {
-                //ignore hidden file
-                if(event->name[0] != '.')
-                {
-                    printf("%s\n", event->name);
-                    ntf->time = time(NULL);
-                }
-            }
-        }
-    }
-}
-
-int notify_dir(s_notify *ntf, const char *path_ptr)
-{
-    int wd = inotify_add_watch(ntf->notify_fd, path_ptr, flags);
+    int wd = inotify_add_watch(ntf_ptr->notify_fd, path_ptr, flags);
     if(wd == -1)
     {
         printf("inotify_add_watch failed[%s]\n", path_ptr);
     }
     else
     {
-        ntf->s_watch_p_len += 1;
-        s_watch *s_w = (s_watch *)realloc(ntf->s_watch_p, sizeof(s_watch) * ntf->s_watch_p_len);
-        s_w[ntf->s_watch_p_len - 1].wd = wd;
-        strcpy(s_w[ntf->s_watch_p_len - 1].wpath, path_ptr);
-        ntf->s_watch_p = s_w;
+        ntf_ptr->dir_watch_ptr_len += 1;
+        dir_watch *s_w = (dir_watch *)realloc(ntf_ptr->dir_watch_ptr, sizeof(dir_watch) * ntf_ptr->dir_watch_ptr_len);
+        s_w[ntf_ptr->dir_watch_ptr_len - 1].wd = wd;
+        strcpy(s_w[ntf_ptr->dir_watch_ptr_len - 1].wpath, path_ptr);
+        ntf_ptr->dir_watch_ptr = s_w;
     }
 
     return wd;
 }
 
-
-void notify()
+void watch(const conf *cf_ptr)
 {
-    for(int i = 0;i < s_notify_p_len;i++)
+    notification ntf;
+    memset(&ntf, 0, sizeof(notification));
+
+    int nd = inotify_init();
+    if(nd == -1)
     {
-        int nd = inotify_init();
-        if(nd == -1)
-        {
-            printf("inotify_init failed\n");
-            s_notify_p[i].notify_fd = -1;
-            s_notify_p[i].s_watch_p = NULL;
-            s_notify_p[i].s_watch_p_len = 0;
-            continue;
-        }
-
-        s_notify_p[i].notify_fd = nd;
-
-        int wd = notify_dir(&(s_notify_p[i]), s_notify_p[i].conf.path);
-        if(wd != -1)
-        {
-            memset(dirs, 0, sizeof(dirs) / sizeof(char));
-            dirs_len = 0;
-            list_dir(s_notify_p[i].conf.path, 1);
-            for(int j = 0; j < dirs_len;j++)
-            {
-                notify_dir(&(s_notify_p[i]), dirs[j]);
-            }
-        }
-    }
-}
-
-
-void handle_watch(s_notify *ntf)
-{
-    char buf[BUF_LEN];
-    size_t read_len;
-    char *p;
-    struct inotify_event *event;
-
-    read_len = read(ntf->notify_fd, buf, BUF_LEN);
-    if(read_len == -1)
-    {
-        printf("read failed\n");
+        printf("inotify_init failed\n");
+        ntf.notify_fd = -1;
+        ntf.dir_watch_ptr = NULL;
+        ntf.dir_watch_ptr_len = 0;
+        return;
     }
 
-    for(p=buf;p < buf+read_len;)
+    ntf.notify_fd = nd;
+
+    int wd = add_dir_to_watch_list(&ntf, cf_ptr->src_dir);
+    if(wd != -1)
     {
-        event = (struct inotify_event *)p;
-        handle_notify(ntf, event);
-//        printf("%d %d %s\n", read_len, event->len, event->name);
-        p += sizeof(struct inotify_event) + event->len;
+        memset(dirs, 0, sizeof(dirs) / sizeof(char));
+        dirs_len = 0;
+        list_dir(cf_ptr->src_dir);
+        for(int j = 0; j < dirs_len;j++)
+        {
+            add_dir_to_watch_list(&ntf, dirs[j]);
+        }
     }
-}
 
-void watch()
-{
-    struct timeval tv;
-    while(1)
+    for(;;)
     {
-        tv.tv_sec = 1;
-        tv.tv_usec = 0;
+        sleep(1);
 
-        fd_set rd;
-        int max_fd = 0;
-        FD_ZERO(&rd);
-        for(int i = 0;i < s_notify_p_len;i++)
+        char *temp_buf_ptr = NULL;
+        char buf[BUF_LEN] = {0};
+        size_t read_len = 0;
+        struct inotify_event *event_ptr;
+
+        read_len = read(ntf.notify_fd, buf, BUF_LEN);
+        if(read_len == -1)
         {
-            FD_SET(s_notify_p[i].notify_fd, &rd);
-            if(max_fd < s_notify_p[i].notify_fd)
+            printf("read failed\n");
+        }
+
+        for(temp_buf_ptr = buf;temp_buf_ptr < buf + read_len;)
+        {
+            event_ptr = (struct inotify_event *)temp_buf_ptr;
+            // handle watch
+            if(event_ptr->mask & IN_ISDIR)
             {
-                max_fd = s_notify_p[i].notify_fd;
-            }
-        }
-
-        int ret = select(max_fd + 1, &rd, NULL, NULL, &tv);
-
-//        for(int i = 0; i < s_notify_p_len;i++)
-//        {
-//            time_t cmd_time = s_notify_p[i].time;
-//            time_t now_time = time(NULL);
-//            if(cmd_time == 0)
-//            {
-//                continue;
-//            }
-//            else
-//            {
-//                if(now_time - cmd_time >= s_notify_p[i].conf.delay)
-//                {
-//                    system(s_notify_p[i].conf.cmd);
-//                    s_notify_p[i].time = 0;
-//                }
-//            }
-//        }
-
-        if(ret == -1)
-        {
-            continue;
-        }
-        else if(ret == 0)
-        {
-            continue;
-        }
-        else
-        {
-            for(int i = 0; i < s_notify_p_len;i++)
-            {
-                if(FD_ISSET(s_notify_p[i].notify_fd, &rd))
+                if(event_ptr->len > 0)
                 {
-                    handle_watch(&(s_notify_p[i]));
+                    //ignore hidden file
+                    if(event_ptr->name[0] != '.')
+                    {
+                        char new_path[PATH_MAX] = {0};
+                        int parent_wd = event_ptr->wd;
+                        for(int i = 0;i < ntf.dir_watch_ptr_len;i++)
+                        {
+                            if(parent_wd == ntf.dir_watch_ptr[i].wd)
+                            {
+                                sprintf(new_path, "%s/%s", ntf.dir_watch_ptr[i].wpath, event_ptr->name);
+                                break;
+                            }
+                        }
+                        add_dir_to_watch_list(&ntf, new_path);
+                    }
                 }
             }
+            else
+            {
+                if(event_ptr->mask & flags)
+                {
+                    if(event_ptr->len > 0)
+                    {
+                        //ignore hidden file
+                        if(event_ptr->name[0] != '.')
+                        {
+                            printf("%s\n", event_ptr->name);
+                        }
+                    }
+                }
+            }
+
+//        printf("%d %d %s\n", read_len, event->len, event->name);
+            temp_buf_ptr += sizeof(struct inotify_event) + event_ptr->len;
         }
     }
 }
