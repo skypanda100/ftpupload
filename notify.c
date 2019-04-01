@@ -105,21 +105,19 @@ static void transfer()
         for(int i = 0;i < file_len;i++)
         {
             char *file_ptr = file_ptr_ptr[i];
-            char relative_dst_file_path[PATH_MAX] = {0};
 
             if(strlen(file_ptr) > 0)
             {
-                strcpy(relative_dst_file_path, file_ptr + strlen(cf.src_dir));
                 printf("after 1 seconds upload %s!\n", file_ptr);
                 sleep(1);   // 待文件稳定后再上传
-                int code = upload(file_ptr, relative_dst_file_path);
+                int code = upload(file_ptr);
                 if(code == UPLOAD_FAILED)
                 {
                     for(int try_no = 0;try_no < RETRY_MAX;try_no++)
                     {
                         printf("%d retry: after 10 seconds upload file again, max retry number is %d!\n", try_no, RETRY_MAX);
                         sleep(10);
-                        code = upload(file_ptr, relative_dst_file_path);
+                        code = upload(file_ptr);
                         if(code == UPLOAD_OK || code == FILE_NOT_EXISTS)
                         {
                             break;
@@ -141,6 +139,7 @@ static void transfer()
             free(file_ptr_ptr[i]);
             file_ptr_ptr[i] = NULL;
         }
+        free(file_ptr_ptr);
         sleep(3);
     }
 }
