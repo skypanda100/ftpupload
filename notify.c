@@ -40,23 +40,29 @@ static void list_dir(const char *path_ptr, char ***dir_ptr_ptr_ptr, size_t *dirs
     closedir(d_ptr);
 }
 
-static void absolute_path(const notification *ntf_ptr, const struct inotify_event *event_ptr, char *new_path_ptr)
+static void absolute_path(const notification *ntf_ptr, int wd, const char *name_ptr, char *new_path_ptr)
 {
     for(int i = 0;i < ntf_ptr->dir_watch_ptr_len;i++)
     {
-        if(event_ptr->wd == ntf_ptr->dir_watch_ptr[i].wd)
+        if(wd == ntf_ptr->dir_watch_ptr[i].wd)
         {
-            sprintf(new_path_ptr, "%s/%s", ntf_ptr->dir_watch_ptr[i].wpath, event_ptr->name);
+            sprintf(new_path_ptr, "%s/%s", ntf_ptr->dir_watch_ptr[i].wpath, name_ptr);
             break;
         }
     }
 }
 
-static void handle_notify(const conf *cf_ptr, const notification *ntf_ptr, const struct inotify_event *event_ptr)
+static void handle_notify(void *v_t_a_ptr)
 {
+    thread_arg *ta_ptr = (thread_arg *)v_t_a_ptr;
+    conf *cf_ptr = &(ta_ptr->cf);
+    notification *ntf_ptr = &(ta_ptr->ntf);
+    int wd = ta_ptr->wd;
+    char *name_ptr = ta_ptr->name;
+
     char src_file_path[PATH_MAX] = {0};
     char relative_dst_file_path[PATH_MAX] = {0};
-    absolute_path(ntf_ptr, event_ptr, src_file_path);
+    absolute_path(ntf_ptr, wd, name_ptr, src_file_path);
     if(strlen(src_file_path) > 0)
     {
         strcpy(relative_dst_file_path, src_file_path + strlen(cf_ptr->src_dir));
@@ -107,7 +113,7 @@ int add_dir_to_watch_list(notification *ntf_ptr, const char *path_ptr)
     return wd;
 }
 
-void watch(const conf *cf_ptr)
+void watch(conf *cf_ptr)
 {
     notification ntf;
     memset(&ntf, 0, sizeof(notification));
@@ -171,7 +177,7 @@ void watch(const conf *cf_ptr)
                     if(event_ptr->name[0] != '.')
                     {
                         char new_path[PATH_MAX] = {0};
-                        absolute_path(&ntf, event_ptr, new_path);
+                        absolute_path(&ntf, event_ptr->wd, event_ptr->name, new_path);
                         if(strlen(new_path) > 0)
                         {
                             add_dir_to_watch_list(&ntf, new_path);
@@ -188,7 +194,16 @@ void watch(const conf *cf_ptr)
                         //ignore hidden file
                         if(event_ptr->name[0] != '.')
                         {
-                            handle_notify(cf_ptr, &ntf, event_ptr);
+                            pthread_t *thread = (pthread_t *)malloc(sizeof(pthread_t));
+                            thread_arg ta;
+
+                            ta.cf = *cf_ptr;
+                            ta.ntf = ntf;
+                            ta.wd = event_ptr->wd;
+                            strcpy(ta.name, event_ptr->name);
+
+                            pthread_create(thread, NULL, (void *)&handle_notify, &ta);
+//                            handle_notify(cf_ptr, &ntf, event_ptr);
                         }
                     }
                 }

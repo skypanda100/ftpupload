@@ -7,8 +7,9 @@
 
 #include <sys/time.h>
 #include <limits.h>
+#include <sys/inotify.h>
 
-#define BUF_LEN 1024
+#define BUF_LEN 4096
 #define RETRY_MAX 5
 
 enum UPLOAD_CODE {
@@ -37,5 +38,13 @@ typedef struct st_notification
     dir_watch *dir_watch_ptr;
     int dir_watch_ptr_len;
 }notification;
+
+typedef struct st_thread_arg
+{
+    conf cf;
+    notification ntf;
+    int wd;
+    char name[PATH_MAX];
+}thread_arg;
 
 #endif //FTPUPLOAD_DEF_H
