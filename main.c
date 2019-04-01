@@ -2,6 +2,8 @@
 #include "config.h"
 #include "notify.h"
 
+conf cf;
+
 int main(int argc,char **argv)
 {
 //    daemon(0, 1);
@@ -9,11 +11,10 @@ int main(int argc,char **argv)
     if(argc == 2)
     {
         // get infomation from conf file
-        conf cf;
-        config(&cf, argv[1]);
+        config(argv[1]);
 
         // watch the path and upload
-        watch(&cf);
+        watch();
     }
     else
     {

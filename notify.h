@@ -17,7 +17,6 @@
 #include "def.h"
 #include "curlftp.h"
 
-int add_dir_to_watch_list(notification *ntf_ptr, const char *path_ptr);
-void watch(conf *cf_ptr);
+void watch();
 
 #endif //FTPUPLOAD_NOTIFY_H

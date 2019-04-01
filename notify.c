@@ -4,7 +4,12 @@
 
 #include "notify.h"
 
+extern conf cf;
+
 static size_t flags = IN_CREATE | IN_CLOSE_WRITE | IN_MOVED_TO;
+static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+static char **transfer_file_ptr_ptr = NULL;
+static int transfer_file_len = 0;
 
 static void list_dir(const char *path_ptr, char ***dir_ptr_ptr_ptr, size_t *dirs_len_ptr)
 {
@@ -52,49 +57,7 @@ static void absolute_path(const notification *ntf_ptr, int wd, const char *name_
     }
 }
 
-static void handle_notify(void *v_t_a_ptr)
-{
-    thread_arg *ta_ptr = (thread_arg *)v_t_a_ptr;
-    conf *cf_ptr = &(ta_ptr->cf);
-    notification *ntf_ptr = &(ta_ptr->ntf);
-    int wd = ta_ptr->wd;
-    char *name_ptr = ta_ptr->name;
-
-    char src_file_path[PATH_MAX] = {0};
-    char relative_dst_file_path[PATH_MAX] = {0};
-    absolute_path(ntf_ptr, wd, name_ptr, src_file_path);
-    if(strlen(src_file_path) > 0)
-    {
-        strcpy(relative_dst_file_path, src_file_path + strlen(cf_ptr->src_dir));
-        printf("after 3 seconds upload %s!\n", src_file_path);
-        sleep(3);   // 待文件稳定后再上传
-        int code = upload(cf_ptr->is_sftp, src_file_path, cf_ptr->dst_dir, relative_dst_file_path, cf_ptr->user_pwd);
-        if(code == UPLOAD_FAILED)
-        {
-            for(int try_no = 0;try_no < RETRY_MAX;try_no++)
-            {
-                printf("%d retry: after 10 seconds upload file again, max retry number is %d!\n", try_no, RETRY_MAX);
-                sleep(10);
-                code = upload(cf_ptr->is_sftp, src_file_path, cf_ptr->dst_dir, relative_dst_file_path, cf_ptr->user_pwd);
-                if(code == UPLOAD_OK || code == FILE_NOT_EXISTS)
-                {
-                    break;
-                }
-            }
-        }
-        else if(code == UPLOAD_OK)
-        {
-            printf("upload file successfully!\n");
-        }
-        else if(code == FILE_NOT_EXISTS)
-        {
-            printf("file is not exist!\n");
-        }
-    }
-}
-
-
-int add_dir_to_watch_list(notification *ntf_ptr, const char *path_ptr)
+static int add_dir_to_watch_list(notification *ntf_ptr, const char *path_ptr)
 {
     int wd = inotify_add_watch(ntf_ptr->notify_fd, path_ptr, flags);
     if(wd == -1)
@@ -113,8 +76,78 @@ int add_dir_to_watch_list(notification *ntf_ptr, const char *path_ptr)
     return wd;
 }
 
-void watch(conf *cf_ptr)
+static void transfer()
 {
+    for(;;)
+    {
+        char **file_ptr_ptr = NULL;
+        int file_len = 0;
+        if(transfer_file_ptr_ptr != NULL)
+        {
+            if(pthread_mutex_lock(&mutex) != 0)
+            {
+                fprintf(stderr, "[line: %ld]pthread_mutex_lock\n", __LINE__);
+            }
+            file_len = transfer_file_len;
+            file_ptr_ptr = (char **)malloc(sizeof(char *) * file_len);
+            memcpy(file_ptr_ptr, transfer_file_ptr_ptr, sizeof(char *) * transfer_file_len);
+
+            // free
+            free(transfer_file_ptr_ptr);
+            transfer_file_ptr_ptr = NULL;
+            transfer_file_len = 0;
+            if(pthread_mutex_unlock(&mutex) != 0)
+            {
+                fprintf(stderr, "[line: %ld]pthread_mutex_unlock\n", __LINE__);
+            }
+        }
+
+        for(int i = 0;i < file_len;i++)
+        {
+            char *file_ptr = file_ptr_ptr[i];
+            char relative_dst_file_path[PATH_MAX] = {0};
+
+            if(strlen(file_ptr) > 0)
+            {
+                strcpy(relative_dst_file_path, file_ptr + strlen(cf.src_dir));
+                printf("after 1 seconds upload %s!\n", file_ptr);
+                sleep(1);   // 待文件稳定后再上传
+                int code = upload(file_ptr, relative_dst_file_path);
+                if(code == UPLOAD_FAILED)
+                {
+                    for(int try_no = 0;try_no < RETRY_MAX;try_no++)
+                    {
+                        printf("%d retry: after 10 seconds upload file again, max retry number is %d!\n", try_no, RETRY_MAX);
+                        sleep(10);
+                        code = upload(file_ptr, relative_dst_file_path);
+                        if(code == UPLOAD_OK || code == FILE_NOT_EXISTS)
+                        {
+                            break;
+                        }
+                    }
+                }
+                else if(code == UPLOAD_OK)
+                {
+                    printf("upload file successfully!\n");
+                }
+                else if(code == FILE_NOT_EXISTS)
+                {
+                    printf("file is not exist!\n");
+                }
+            }
+        }
+        // free
+        for(int i = 0;i < file_len;i++) {
+            free(file_ptr_ptr[i]);
+            file_ptr_ptr[i] = NULL;
+        }
+        sleep(3);
+    }
+}
+
+void watch()
+{
+    pthread_t thread;
     notification ntf;
     memset(&ntf, 0, sizeof(notification));
 
@@ -127,15 +160,14 @@ void watch(conf *cf_ptr)
         ntf.dir_watch_ptr_len = 0;
         return;
     }
-
     ntf.notify_fd = nd;
 
-    int wd = add_dir_to_watch_list(&ntf, cf_ptr->src_dir);
+    int wd = add_dir_to_watch_list(&ntf, cf.src_dir);
     if(wd != -1)
     {
         size_t dirs_len = 0;
         char **dir_ptr_ptr = NULL;
-        list_dir(cf_ptr->src_dir, &dir_ptr_ptr, &dirs_len);
+        list_dir(cf.src_dir, &dir_ptr_ptr, &dirs_len);
         for(int i = 0; i < dirs_len;i++)
         {
             add_dir_to_watch_list(&ntf, dir_ptr_ptr[i]);
@@ -152,6 +184,10 @@ void watch(conf *cf_ptr)
         }
     }
 
+    // create a thread that loop files and transfer it
+    pthread_create(&thread, NULL, (void *)&transfer, NULL);
+
+    // dead loop, watch dirs and files
     for(;;)
     {
         char *temp_buf_ptr = NULL;
@@ -168,7 +204,6 @@ void watch(conf *cf_ptr)
         for(temp_buf_ptr = buf;temp_buf_ptr < buf + read_len;)
         {
             event_ptr = (struct inotify_event *)temp_buf_ptr;
-            // handle watch
             if(event_ptr->mask & IN_ISDIR)
             {
                 if(event_ptr->len > 0)
@@ -194,22 +229,26 @@ void watch(conf *cf_ptr)
                         //ignore hidden file
                         if(event_ptr->name[0] != '.')
                         {
-                            pthread_t thread;
-                            thread_arg ta;
-
-                            ta.cf = *cf_ptr;
-                            ta.ntf = ntf;
-                            ta.wd = event_ptr->wd;
-                            strcpy(ta.name, event_ptr->name);
-
-                            pthread_create(&thread, NULL, (void *)&handle_notify, &ta);
-//                            handle_notify(cf_ptr, &ntf, event_ptr);
+                            char src_file_path[PATH_MAX] = {0};
+                            absolute_path(&ntf, event_ptr->wd, event_ptr->name, src_file_path);
+                            if(strlen(src_file_path) > 0)
+                            {
+                                if(pthread_mutex_lock(&mutex) != 0)
+                                {
+                                    fprintf(stderr, "[line: %ld]pthread_mutex_lock\n", __LINE__);
+                                }
+                                transfer_file_len++;
+                                transfer_file_ptr_ptr = (char **)realloc(transfer_file_ptr_ptr, sizeof(char *) * transfer_file_len);
+                                transfer_file_ptr_ptr[transfer_file_len - 1] = strdup(src_file_path);
+                                if(pthread_mutex_unlock(&mutex) != 0)
+                                {
+                                    fprintf(stderr, "[line: %ld]pthread_mutex_unlock\n", __LINE__);
+                                }
+                            }
                         }
                     }
                 }
             }
-
-//        printf("%d %d %s\n", read_len, event->len, event->name);
             temp_buf_ptr += sizeof(struct inotify_event) + event_ptr->len;
         }
     }

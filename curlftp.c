@@ -4,12 +4,14 @@
 
 #include "curlftp.h"
 
+extern conf cf;
+
 static void work_dir(const char *dst_dir_path_ptr, char *location_ptr)
 {
     sscanf(dst_dir_path_ptr, "%*[^:]://%*[^/]%s", location_ptr);
 }
 
-static int rename_by_cmd(CURL *curl, int is_sftp, const char *dst_dir_path_ptr, const char *relative_dst_file_path_ptr, size_t suffix)
+static int rename_by_cmd(CURL *curl, const char *relative_dst_file_path_ptr, size_t suffix)
 {
     CURLcode curl_code;
     struct curl_slist *header_list_1_ptr = NULL;
@@ -18,8 +20,8 @@ static int rename_by_cmd(CURL *curl, int is_sftp, const char *dst_dir_path_ptr, 
     char buf_1[PATH_MAX] = {0};
     char buf_2[PATH_MAX] = {0};
 
-    work_dir(dst_dir_path_ptr, cwd);
-    if(is_sftp)
+    work_dir(cf.dst_dir, cwd);
+    if(cf.is_sftp)
     {
         sprintf(buf_1, "rm %s/%s", cwd, relative_dst_file_path_ptr);
         header_list_1_ptr = curl_slist_append(header_list_1_ptr, buf_1);
@@ -42,7 +44,7 @@ static int rename_by_cmd(CURL *curl, int is_sftp, const char *dst_dir_path_ptr, 
 
         if(curl_code == CURLE_QUOTE_ERROR || curl_code == CURLE_OK)
         {
-            if(is_sftp)
+            if(cf.is_sftp)
             {
                 sprintf(buf_2, "rename %s/%s.%ld %s/%s", cwd, relative_dst_file_path_ptr, suffix, cwd, relative_dst_file_path_ptr);
                 header_list_2_ptr = curl_slist_append(header_list_2_ptr, buf_2);
@@ -57,7 +59,7 @@ static int rename_by_cmd(CURL *curl, int is_sftp, const char *dst_dir_path_ptr, 
     return curl_code;
 }
 
-int upload(int is_sftp, const char *src_file_path_ptr, const char *dst_dir_path_ptr, const char *relative_dst_file_path_ptr, const char *user_pwd_ptr)
+int upload(const char *src_file_path_ptr, const char *relative_dst_file_path_ptr)
 {
     CURLcode curl_code;
     long local_file_size;
@@ -65,7 +67,7 @@ int upload(int is_sftp, const char *src_file_path_ptr, const char *dst_dir_path_
     char remote_url[PATH_MAX] = {0};
     size_t suffix = (size_t)&remote_url;
 
-    sprintf(remote_url, "%s/%s.%ld", dst_dir_path_ptr, relative_dst_file_path_ptr, suffix);
+    sprintf(remote_url, "%s/%s.%ld", cf.dst_dir, relative_dst_file_path_ptr, suffix);
 
     fp = fopen(src_file_path_ptr, "rb");
     if(NULL == fp)
@@ -85,7 +87,7 @@ int upload(int is_sftp, const char *src_file_path_ptr, const char *dst_dir_path_
         return UPLOAD_FAILED;
     }
 
-    curl_easy_setopt(curl, CURLOPT_USERPWD, user_pwd_ptr);
+    curl_easy_setopt(curl, CURLOPT_USERPWD, cf.user_pwd);
     curl_easy_setopt(curl, CURLOPT_URL, remote_url);
     curl_easy_setopt(curl, CURLOPT_READDATA, fp);
     curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
@@ -99,7 +101,7 @@ int upload(int is_sftp, const char *src_file_path_ptr, const char *dst_dir_path_
     curl_code = curl_easy_perform(curl);
     if(CURLE_OK == curl_code)
     {
-        curl_code = rename_by_cmd(curl, is_sftp, dst_dir_path_ptr, relative_dst_file_path_ptr, suffix);
+        curl_code = rename_by_cmd(curl, relative_dst_file_path_ptr, suffix);
     }
     curl_easy_cleanup(curl);
     fclose(fp);

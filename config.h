@@ -13,6 +13,6 @@
 #include <errno.h>
 #include "def.h"
 
-void config(conf *conf_ptr, char *conf_path_ptr);
+void config(const char *conf_path_ptr);
 
 #endif //FTPUPLOAD_CONFIG_H

@@ -4,6 +4,8 @@
 
 #include "config.h"
 
+extern conf cf;
+
 static char *key_src_dir = "src_dir";
 static char *key_dst_dir = "dst_dir";
 static char *key_user_pwd = "user_pwd";
@@ -35,7 +37,7 @@ static char *a_trim(char *output_ptr, const char *input_ptr)
 }
 
 
-void config(conf *conf_ptr, char *conf_path_ptr)
+void config(const char *conf_path_ptr)
 {
     char key[32] = {0};
     char val_src_dir[1024] = {0};
@@ -135,8 +137,8 @@ void config(conf *conf_ptr, char *conf_path_ptr)
         }
     }
 
-    strcpy(conf_ptr->src_dir, val_src_dir);
-    strcpy(conf_ptr->dst_dir, val_dst_dir);
-    strcpy(conf_ptr->user_pwd, val_user_pwd);
-    conf_ptr->is_sftp = is_sftp;
+    strcpy(cf.src_dir, val_src_dir);
+    strcpy(cf.dst_dir, val_dst_dir);
+    strcpy(cf.user_pwd, val_user_pwd);
+    cf.is_sftp = is_sftp;
 }
