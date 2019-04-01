@@ -194,7 +194,7 @@ void watch(conf *cf_ptr)
                         //ignore hidden file
                         if(event_ptr->name[0] != '.')
                         {
-                            pthread_t *thread = (pthread_t *)malloc(sizeof(pthread_t));
+                            pthread_t thread;
                             thread_arg ta;
 
                             ta.cf = *cf_ptr;
@@ -202,7 +202,7 @@ void watch(conf *cf_ptr)
                             ta.wd = event_ptr->wd;
                             strcpy(ta.name, event_ptr->name);
 
-                            pthread_create(thread, NULL, (void *)&handle_notify, &ta);
+                            pthread_create(&thread, NULL, (void *)&handle_notify, &ta);
 //                            handle_notify(cf_ptr, &ntf, event_ptr);
                         }
                     }
