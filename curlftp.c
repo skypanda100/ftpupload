@@ -78,7 +78,7 @@ int upload(const char *src_file_path_ptr)
     }
     fseek(fp, 0L, SEEK_END);
     local_file_size = ftell(fp);
-    printf("file name is %s, file size is %ld\n", src_file_path_ptr, local_file_size);
+    LOG(cf.log, "file name is %s, file size is %ld", src_file_path_ptr, local_file_size);
     fseek(fp, 0L, SEEK_SET);
 
     curl_global_init(CURL_GLOBAL_DEFAULT);
@@ -111,7 +111,7 @@ int upload(const char *src_file_path_ptr)
 
     if(CURLE_OK != curl_code)
     {
-        fprintf(stderr, "%s.%ld rename error\n", relative_dst_file_path, suffix);
+        LOG(cf.log, "%s.%ld rename error", relative_dst_file_path, suffix);
         return UPLOAD_FAILED;
     }
 

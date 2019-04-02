@@ -11,7 +11,7 @@ endif ()
 
 set(CMAKE_C_STANDARD 99)
 
-set(SOURCE_FILES main.c notify.h notify.c def.h config.h config.c curlftp.h curlftp.c)
+set(SOURCE_FILES main.c notify.h notify.c def.h config.h config.c curlftp.h curlftp.c log.h log.c)
 
 add_executable(ftpupload ${SOURCE_FILES})
 target_link_libraries(ftpupload curl)

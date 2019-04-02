@@ -18,7 +18,7 @@ int main(int argc,char **argv)
     }
     else
     {
-        fprintf(stderr, "argument error, please input absolute path of conf file!\n");
+        fprintf(stderr, "argument error, please input absolute path of conf file!\n", __FILE__);
     }
 
     return 0;

@@ -6,9 +6,11 @@
 
 extern conf cf;
 
-static char *key_src_dir = "src_dir";
-static char *key_dst_dir = "dst_dir";
-static char *key_user_pwd = "user_pwd";
+static char *key_src_dir_ptr = "src_dir";
+static char *key_dst_dir_ptr = "dst_dir";
+static char *key_user_pwd_ptr = "user_pwd";
+static char *key_log_ptr = "log";
+static char *key_cmd_ptr = "cmd";
 
 static char *l_trim(char *output_ptr, const char *input_ptr)
 {
@@ -43,13 +45,15 @@ void config(const char *conf_path_ptr)
     char val_src_dir[1024] = {0};
     char val_dst_dir[1024] = {0};
     char val_user_pwd[128] = {0};
+    char val_log[1024] = {0};
+    char val_cmd[256] = {0};
     int is_sftp = 0;
     char *buf, *c;
     char buf_i[1024], buf_o[1024];
     FILE *fp;
     if((fp=fopen(conf_path_ptr, "r")) == NULL)
     {
-        printf("openfile [%s] error [%s]\n", conf_path_ptr, strerror(errno));
+        LOG(cf.log, "openfile [%s] error [%s]", conf_path_ptr, strerror(errno));
         exit(1);
     }
     fseek(fp, 0, SEEK_SET);
@@ -71,11 +75,12 @@ void config(const char *conf_path_ptr)
                 continue;
             memset(key, 0, sizeof(key));
             sscanf(buf, "%[^=|^ |^\t]", key);
-            if(strcmp(key, key_src_dir) == 0)
+            if(strcmp(key, key_src_dir_ptr) == 0)
             {
                 sscanf(++c, "%[^\n]", val_src_dir);
                 char *val_o = (char *)malloc(strlen(val_src_dir) + 1);
-                if(val_o != NULL){
+                if(val_o != NULL)
+                {
                     memset(val_o, 0, strlen(val_src_dir) + 1);
                     a_trim(val_o, val_src_dir);
                     if(val_o && strlen(val_o) > 0)
@@ -84,11 +89,12 @@ void config(const char *conf_path_ptr)
                     val_o = NULL;
                 }
             }
-            else if(strcmp(key, key_dst_dir) == 0)
+            else if(strcmp(key, key_dst_dir_ptr) == 0)
             {
                 sscanf(++c, "%[^\n]", val_dst_dir);
                 char *val_o = (char *)malloc(strlen(val_dst_dir) + 1);
-                if(val_o != NULL){
+                if(val_o != NULL)
+                {
                     memset(val_o, 0, strlen(val_dst_dir) + 1);
                     a_trim(val_o, val_dst_dir);
                     if(val_o && strlen(val_o) > 0)
@@ -110,15 +116,44 @@ void config(const char *conf_path_ptr)
                     }
                 }
             }
-            else if(strcmp(key, key_user_pwd) == 0)
+            else if(strcmp(key, key_user_pwd_ptr) == 0)
             {
                 sscanf(++c, "%[^\n]", val_user_pwd);
                 char *val_o = (char *)malloc(strlen(val_user_pwd) + 1);
-                if(val_o != NULL){
+                if(val_o != NULL)
+                {
                     memset(val_o, 0, strlen(val_user_pwd) + 1);
                     a_trim(val_o, val_user_pwd);
                     if(val_o && strlen(val_o) > 0)
                         strcpy(val_user_pwd, val_o);
+                    free(val_o);
+                    val_o = NULL;
+                }
+            }
+            else if(strcmp(key, key_log_ptr) == 0)
+            {
+                sscanf(++c, "%[^\n]", val_log);
+                char *val_o = (char *)malloc(strlen(val_log) + 1);
+                if(val_o != NULL)
+                {
+                    memset(val_o, 0, strlen(val_log) + 1);
+                    a_trim(val_o, val_log);
+                    if(val_o && strlen(val_o) > 0)
+                        strcpy(val_log, val_o);
+                    free(val_o);
+                    val_o = NULL;
+                }
+            }
+            else if(strcmp(key, key_cmd_ptr) == 0)
+            {
+                sscanf(++c, "%[^\n]", val_cmd);
+                char *val_o = (char *)malloc(strlen(val_cmd) + 1);
+                if(val_o != NULL)
+                {
+                    memset(val_o, 0, strlen(val_cmd) + 1);
+                    a_trim(val_o, val_cmd);
+                    if(val_o && strlen(val_o) > 0)
+                        strcpy(val_cmd, val_o);
                     free(val_o);
                     val_o = NULL;
                 }
@@ -140,5 +175,7 @@ void config(const char *conf_path_ptr)
     strcpy(cf.src_dir, val_src_dir);
     strcpy(cf.dst_dir, val_dst_dir);
     strcpy(cf.user_pwd, val_user_pwd);
+    strcpy(cf.log, val_log);
+    strcpy(cf.cmd, val_cmd);
     cf.is_sftp = is_sftp;
 }

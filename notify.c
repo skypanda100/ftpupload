@@ -20,7 +20,7 @@ static void list_dir(const char *path_ptr, char ***dir_ptr_ptr_ptr, size_t *dirs
 
     if(!(d_ptr = opendir(path_ptr)))
     {
-        printf("opendir failed[%s]\n", path_ptr);
+        LOG(cf.log, "opendir failed[%s]", path_ptr);
         return;
     }
 
@@ -62,7 +62,7 @@ static int add_dir_to_watch_list(notification *ntf_ptr, const char *path_ptr)
     int wd = inotify_add_watch(ntf_ptr->notify_fd, path_ptr, flags);
     if(wd == -1)
     {
-        printf("inotify_add_watch failed[%s]\n", path_ptr);
+        LOG(cf.log, "inotify_add_watch failed[%s]", path_ptr);
     }
     else
     {
@@ -86,7 +86,7 @@ static void transfer()
         {
             if(pthread_mutex_lock(&mutex) != 0)
             {
-                fprintf(stderr, "[line: %ld]pthread_mutex_lock\n", __LINE__);
+                LOG(cf.log, "pthread_mutex_lock failed!");
             }
             file_len = transfer_file_len;
             file_ptr_ptr = (char **)malloc(sizeof(char *) * file_len);
@@ -98,7 +98,7 @@ static void transfer()
             transfer_file_len = 0;
             if(pthread_mutex_unlock(&mutex) != 0)
             {
-                fprintf(stderr, "[line: %ld]pthread_mutex_unlock\n", __LINE__);
+                LOG(cf.log, "pthread_mutex_unlock failed!");
             }
         }
 
@@ -108,14 +108,14 @@ static void transfer()
 
             if(strlen(file_ptr) > 0)
             {
-                printf("after 1 seconds upload %s!\n", file_ptr);
+                LOG(cf.log, "after 1 seconds upload %s!", file_ptr);
                 sleep(1);   // 待文件稳定后再上传
                 int code = upload(file_ptr);
                 if(code == UPLOAD_FAILED)
                 {
                     for(int try_no = 0;try_no < RETRY_MAX;try_no++)
                     {
-                        printf("%d retry: after 10 seconds upload file again, max retry number is %d!\n", try_no, RETRY_MAX);
+                        LOG(cf.log, "%d retry: after 10 seconds upload file again, max retry number is %d!", try_no, RETRY_MAX);
                         sleep(10);
                         code = upload(file_ptr);
                         if(code == UPLOAD_OK || code == FILE_NOT_EXISTS)
@@ -126,11 +126,11 @@ static void transfer()
                 }
                 else if(code == UPLOAD_OK)
                 {
-                    printf("upload file successfully!\n");
+                    LOG(cf.log, "upload file successfully!");
                 }
                 else if(code == FILE_NOT_EXISTS)
                 {
-                    printf("file is not exist!\n");
+                    LOG(cf.log, "file is not exist!");
                 }
             }
         }
@@ -153,7 +153,7 @@ void watch()
     int nd = inotify_init();
     if(nd == -1)
     {
-        printf("inotify_init failed\n");
+        LOG(cf.log, "inotify_init failed");
         ntf.notify_fd = -1;
         ntf.dir_watch_ptr = NULL;
         ntf.dir_watch_ptr_len = 0;
@@ -170,7 +170,7 @@ void watch()
         for(int i = 0; i < dirs_len;i++)
         {
             add_dir_to_watch_list(&ntf, dir_ptr_ptr[i]);
-            printf("sub dir is %s\n", dir_ptr_ptr[i]);
+            LOG(cf.log, "sub dir is %s", dir_ptr_ptr[i]);
         }
         // free
         if(dirs_len > 0)
@@ -197,7 +197,7 @@ void watch()
         read_len = read(ntf.notify_fd, buf, BUF_LEN);
         if(read_len == -1)
         {
-            printf("read failed\n");
+            LOG(cf.log, "read failed!");
         }
 
         for(temp_buf_ptr = buf;temp_buf_ptr < buf + read_len;)
@@ -234,14 +234,14 @@ void watch()
                             {
                                 if(pthread_mutex_lock(&mutex) != 0)
                                 {
-                                    fprintf(stderr, "[line: %ld]pthread_mutex_lock\n", __LINE__);
+                                    LOG(cf.log, "pthread_mutex_lock failed!");
                                 }
                                 transfer_file_len++;
                                 transfer_file_ptr_ptr = (char **)realloc(transfer_file_ptr_ptr, sizeof(char *) * transfer_file_len);
                                 transfer_file_ptr_ptr[transfer_file_len - 1] = strdup(src_file_path);
                                 if(pthread_mutex_unlock(&mutex) != 0)
                                 {
-                                    fprintf(stderr, "[line: %ld]pthread_mutex_unlock\n", __LINE__);
+                                    LOG(cf.log, "pthread_mutex_unlock failed!");
                                 }
                             }
                         }
