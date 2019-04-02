@@ -76,6 +76,17 @@ static int add_dir_to_watch_list(notification *ntf_ptr, const char *path_ptr)
     return wd;
 }
 
+static void execute(const char *file_path_ptr)
+{
+    if(strlen(cf.cmd) > 0)
+    {
+        char cmd[1024] = {0};
+        sprintf(cmd, cf.cmd, file_path_ptr);
+        system(cmd);
+        LOG(cf.log, "execute cmd: %s", cmd);
+    }
+}
+
 static void transfer()
 {
     for(;;)
@@ -127,6 +138,7 @@ static void transfer()
                 else if(code == UPLOAD_OK)
                 {
                     LOG(cf.log, "upload file successfully!");
+                    execute(file_ptr);
                 }
                 else if(code == FILE_NOT_EXISTS)
                 {

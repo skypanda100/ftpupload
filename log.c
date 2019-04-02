@@ -69,7 +69,8 @@ void logger(const char *dir_ptr, const char *source_ptr, size_t line, const char
                 tm_ptr->tm_mon + 1,
                 tm_ptr->tm_mday);
 
-        if (!(fp = fopen(file_path, "a+"))) {
+        if(!(fp = fopen(file_path, "a+")))
+        {
             pthread_mutex_unlock(&log_mutex);
             return;
         }
