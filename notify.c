@@ -119,8 +119,8 @@ static void transfer()
 
             if(strlen(file_ptr) > 0)
             {
-                LOG(cf.log, "after 1 seconds upload %s!", file_ptr);
-                sleep(1);   // 待文件稳定后再上传
+                LOG(cf.log, "after 3 seconds upload %s!", file_ptr);
+                sleep(3);   // 待文件稳定后再上传
                 int code = upload(file_ptr);
                 if(code == UPLOAD_FAILED)
                 {
