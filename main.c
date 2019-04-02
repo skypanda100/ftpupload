@@ -6,7 +6,7 @@ conf cf;
 
 int main(int argc,char **argv)
 {
-//    daemon(0, 1);
+    daemon(0, 1);
 
     if(argc == 2)
     {
