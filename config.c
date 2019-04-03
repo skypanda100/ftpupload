@@ -53,7 +53,7 @@ void config(const char *conf_path_ptr)
     FILE *fp;
     if((fp=fopen(conf_path_ptr, "r")) == NULL)
     {
-        fprintf(stderr, "openfile [%s] error [%s]", conf_path_ptr, strerror(errno));
+        fprintf(stderr, "openfile [%s] error [%s]\n", conf_path_ptr, strerror(errno));
         exit(1);
     }
     fseek(fp, 0, SEEK_SET);
