@@ -8,6 +8,47 @@
 2. 一旦有文件处于待传输状态，等待3秒后，再传输，此处是为了避免某些中间文件的传输。
 3. 如果传输过程中网络异常，做5次重传尝试。
 
+注意：
+由于inotify监控的是本地文件系统的状态，所以该程序具有以下限制：
+<table>
+    <tbody>
+        <tr>
+            <th align="center">前置条件</th>
+            <th align="center">是否可用</th>
+        </tr>
+    </tbody>
+    <tbody>
+        <tr>
+            <td align="left">监控目录是本地目录并且该目录中的文件在本地生成</td>
+            <td align="center">√</td>
+        </tr>
+    </tbody>
+    <tbody>
+        <tr>
+            <td align="left">监控目录是本地目录也是共享目录（nfs，ftp等），该目录中的文件在本地生成</td>
+            <td align="center">√</td>
+        </tr>
+    </tbody>
+    <tbody>
+        <tr>
+            <td align="left">监控目录是本地目录也是共享目录（nfs，ftp等），该目录中的文件在其他机器上生成</td>
+            <td align="center">√</td>
+        </tr>
+    </tbody>
+    <tbody>
+        <tr>
+            <td align="left">监控目录是挂载的其他机器上的目录，该目录中的文件在本地生成</td>
+            <td align="center">√</td>
+        </tr>
+    </tbody>
+    <tbody>
+        <tr>
+            <td align="left">监控目录是挂载的其他机器上的目录，该目录中的文件在其他机器上生成</td>
+            <td align="center">×</td>
+        </tr>
+    </tbody>
+</table>
+
 # Example Usage
 *project path is `/root/ftpupload`*
 * build  
