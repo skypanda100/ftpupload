@@ -3,6 +3,8 @@
 //
 #include "log.h"
 
+extern conf cf;
+
 static pthread_mutex_t log_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static int make_dir(const char *path_ptr)
@@ -43,8 +45,10 @@ static int make_dir(const char *path_ptr)
     return 0;
 }
 
-void logger(const char *dir_ptr, const char *source_ptr, size_t line, const char *format_ptr, ...)
+void logger(const char *source_ptr, size_t line, const char *format_ptr, ...)
 {
+    char *dir_ptr = cf.log;
+
     if(strlen(dir_ptr) > 0)
     {
         pthread_mutex_lock(&log_mutex);

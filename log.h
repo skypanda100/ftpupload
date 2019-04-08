@@ -17,9 +17,10 @@
 #include <pthread.h>
 #include <limits.h>
 #include <sys/stat.h>
+#include "config.h"
 
-#define LOG(dir, fmt, args...) logger(dir, __FILE__, __LINE__, fmt, ##args);
+#define LOG(fmt, args...) logger(__FILE__, __LINE__, fmt, ##args);
 
-void logger(const char *dir_ptr, const char *source_ptr, size_t line, const char *format_ptr, ...);
+void logger(const char *source_ptr, size_t line, const char *format_ptr, ...);
 
 #endif //FTPUPLOAD_LOG_H
