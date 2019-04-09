@@ -132,6 +132,7 @@ static void transfer()
                         if(code == UPLOAD_OK)
                         {
                             LOG("retry: upload file successfully!");
+                            execute(file_ptr);
                             break;
                         }
                         else if(code == FILE_NOT_EXISTS)
