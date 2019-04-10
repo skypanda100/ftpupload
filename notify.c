@@ -123,21 +123,28 @@ static void transfer()
                 int code = upload(file_ptr);
                 if(code == UPLOAD_FAILED)
                 {
-                    for(int try_no = 0;try_no < RETRY_MAX;try_no++)
+                    if(cf.retry == 0)
                     {
-                        LOG("%d retry: after 10 seconds upload file again, max retry number is %d!", try_no, RETRY_MAX);
-                        sleep(10);
-                        code = upload(file_ptr);
-                        if(code == UPLOAD_OK)
+                        LOG("upload file failed!");
+                    }
+                    else
+                    {
+                        for(int try_no = 0;try_no < cf.retry;try_no++)
                         {
-                            LOG("retry: upload file successfully!");
-                            execute(file_ptr);
-                            break;
-                        }
-                        else if(code == FILE_NOT_EXISTS)
-                        {
-                            LOG("retry: file is not exist!");
-                            break;
+                            LOG("%d retry: after 10 seconds upload file again, max retry number is %d!", try_no, cf.retry);
+                            sleep(10);
+                            code = upload(file_ptr);
+                            if(code == UPLOAD_OK)
+                            {
+                                LOG("retry: upload file successfully!");
+                                execute(file_ptr);
+                                break;
+                            }
+                            else if(code == FILE_NOT_EXISTS)
+                            {
+                                LOG("retry: file is not exist!");
+                                break;
+                            }
                         }
                     }
                 }

@@ -13,6 +13,7 @@ static char *key_dst_dir_ptr = "dst_dir";
 static char *key_user_pwd_ptr = "user_pwd";
 static char *key_log_ptr = "log";
 static char *key_cmd_ptr = "cmd";
+static char *key_retry_ptr = "retry";
 
 static char *l_trim(char *output_ptr, const char *input_ptr)
 {
@@ -49,6 +50,7 @@ void config(const char *conf_path_ptr)
     char val_user_pwd[128] = {0};
     char val_log[1024] = {0};
     char val_cmd[256] = {0};
+    char val_retry[4] = {0};
     int is_sftp = 0;
     int has_found_node = 0;
     char *buf, *c;
@@ -105,6 +107,8 @@ void config(const char *conf_path_ptr)
                     memset(val_log, 0, sizeof(val_log));
                     strcpy(cf_ptr[conf_len - 1].cmd, val_cmd);
                     memset(val_cmd, 0, sizeof(val_cmd));
+                    cf_ptr[conf_len - 1].retry = strlen(val_retry) == 0 ? 0 : atoi(val_retry);
+                    memset(val_retry, 0, sizeof(val_retry));
                     cf_ptr[conf_len - 1].is_sftp = is_sftp;
                     is_sftp = 0;
                 }
@@ -199,6 +203,20 @@ void config(const char *conf_path_ptr)
                     val_o = NULL;
                 }
             }
+            else if(strcmp(key, key_retry_ptr) == 0)
+            {
+                sscanf(++c, "%[^\n]", val_retry);
+                char *val_o = (char *)malloc(strlen(val_retry) + 1);
+                if(val_o != NULL)
+                {
+                    memset(val_o, 0, strlen(val_retry) + 1);
+                    a_trim(val_o, val_retry);
+                    if(val_o && strlen(val_o) > 0)
+                        strcpy(val_retry, val_o);
+                    free(val_o);
+                    val_o = NULL;
+                }
+            }
         }
     }
 
@@ -226,6 +244,7 @@ void config(const char *conf_path_ptr)
         strcpy(cf_ptr[conf_len - 1].user_pwd, val_user_pwd);
         strcpy(cf_ptr[conf_len - 1].log, val_log);
         strcpy(cf_ptr[conf_len - 1].cmd, val_cmd);
+        cf_ptr[conf_len - 1].retry = strlen(val_retry) == 0 ? 0 : atoi(val_retry);
         cf_ptr[conf_len - 1].is_sftp = is_sftp;
     }
 
@@ -237,11 +256,13 @@ void config(const char *conf_path_ptr)
                 "src_dir={dir}\n"
                 "dst_dir=ftp://{ip}/{dir}/\n"
                 "user_pwd={user}:{password}\n"
+                "retry={retryNumber}\n"
                 "log={dir}\n\n"
                 "[mtt]\n"
                 "src_dir={dir}\n"
                 "dst_dir=ftp://{ip}/{dir}/\n"
                 "user_pwd={user}:{password}\n"
+                "retry={retryNumber}\n"
                 "log={dir}\n");
         exit(-1);
     }

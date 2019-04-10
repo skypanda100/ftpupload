@@ -11,7 +11,6 @@
 #include "log.h"
 
 #define BUF_LEN 4096
-#define RETRY_MAX 5
 
 enum UPLOAD_CODE {
     UPLOAD_OK = 1,
@@ -32,6 +31,7 @@ typedef struct st_conf
     char user_pwd[128];
     char log[1024];
     char cmd[256];
+    int retry;
     int is_sftp;
 }conf;
 
