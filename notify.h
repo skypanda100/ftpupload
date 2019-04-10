@@ -17,6 +17,6 @@
 #include "def.h"
 #include "curlftp.h"
 
-void watch();
+void watch(const conf *cf_ptr);
 
 #endif //FTPUPLOAD_NOTIFY_H

@@ -4,8 +4,7 @@
 
 #include "notify.h"
 
-extern conf cf;
-
+conf cf;
 static size_t flags = IN_CREATE | IN_CLOSE_WRITE | IN_MOVED_TO;
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 static char **transfer_file_ptr_ptr = NULL;
@@ -119,8 +118,8 @@ static void transfer()
 
             if(strlen(file_ptr) > 0)
             {
-                LOG("after 3 seconds upload %s!", file_ptr);
-                sleep(3);   // 待文件稳定后再上传
+                LOG("after 1 second upload %s!", file_ptr);
+                sleep(1);   // 待文件稳定后再上传
                 int code = upload(file_ptr);
                 if(code == UPLOAD_FAILED)
                 {
@@ -163,8 +162,11 @@ static void transfer()
     }
 }
 
-void watch()
+void watch(const conf *cf_ptr)
 {
+    // copy
+    memcpy(&cf, cf_ptr, sizeof(conf));
+
     pthread_t thread;
     notification ntf;
     memset(&ntf, 0, sizeof(notification));

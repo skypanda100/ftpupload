@@ -4,8 +4,10 @@
 
 #include "config.h"
 
-extern conf cf;
+extern conf *cf_ptr;
+extern int conf_len;
 
+static char *node_ptr = "mtt";
 static char *key_src_dir_ptr = "src_dir";
 static char *key_dst_dir_ptr = "dst_dir";
 static char *key_user_pwd_ptr = "user_pwd";
@@ -48,6 +50,7 @@ void config(const char *conf_path_ptr)
     char val_log[1024] = {0};
     char val_cmd[256] = {0};
     int is_sftp = 0;
+    int has_found_node = 0;
     char *buf, *c;
     char buf_i[1024], buf_o[1024];
     FILE *fp;
@@ -71,6 +74,44 @@ void config(const char *conf_path_ptr)
         }
         else
         {
+            memset(key, 0, sizeof(key) / sizeof(char));
+            sprintf(key, "[%s]", node_ptr);
+            if(strncmp(buf, key, strlen(key)) == 0)
+            {
+                if(has_found_node != 0)
+                {
+                    if(strlen(val_src_dir) == 0)
+                    {
+                        fprintf(stderr, "src_dir can not be empty!\n");
+                        exit(-1);
+                    }
+
+                    if(strlen(val_dst_dir) == 0)
+                    {
+                        fprintf(stderr, "dst_dir can not be empty!\n");
+                        exit(-1);
+                    }
+
+                    conf_len++;
+                    cf_ptr = (conf *)realloc(cf_ptr, sizeof(conf) * conf_len);
+
+                    strcpy(cf_ptr[conf_len - 1].src_dir, val_src_dir);
+                    memset(val_src_dir, 0, sizeof(val_src_dir));
+                    strcpy(cf_ptr[conf_len - 1].dst_dir, val_dst_dir);
+                    memset(val_dst_dir, 0, sizeof(val_dst_dir));
+                    strcpy(cf_ptr[conf_len - 1].user_pwd, val_user_pwd);
+                    memset(val_user_pwd, 0, sizeof(val_user_pwd));
+                    strcpy(cf_ptr[conf_len - 1].log, val_log);
+                    memset(val_log, 0, sizeof(val_log));
+                    strcpy(cf_ptr[conf_len - 1].cmd, val_cmd);
+                    memset(val_cmd, 0, sizeof(val_cmd));
+                    cf_ptr[conf_len - 1].is_sftp = is_sftp;
+                    is_sftp = 0;
+                }
+                has_found_node = 1;
+                continue;
+            }
+
             if((c = strchr(buf, '=')) == NULL)
                 continue;
             memset(key, 0, sizeof(key));
@@ -160,22 +201,48 @@ void config(const char *conf_path_ptr)
             }
         }
     }
+
     fclose(fp);
 
-    int src_dir_len = strlen(val_src_dir);
-    if(src_dir_len > 0)
+    if(has_found_node != 0)
     {
-        if(val_src_dir[src_dir_len - 1] != '/')
+        if(strlen(val_src_dir) == 0)
         {
-            val_src_dir[src_dir_len] = '/';
-            val_src_dir[src_dir_len + 1] = 0;
+            fprintf(stderr, "src_dir can not be empty!\n");
+            exit(-1);
         }
+
+        if(strlen(val_dst_dir) == 0)
+        {
+            fprintf(stderr, "dst_dir can not be empty!\n");
+            exit(-1);
+        }
+
+        conf_len++;
+        cf_ptr = (conf *)realloc(cf_ptr, sizeof(conf) * conf_len);
+
+        strcpy(cf_ptr[conf_len - 1].src_dir, val_src_dir);
+        strcpy(cf_ptr[conf_len - 1].dst_dir, val_dst_dir);
+        strcpy(cf_ptr[conf_len - 1].user_pwd, val_user_pwd);
+        strcpy(cf_ptr[conf_len - 1].log, val_log);
+        strcpy(cf_ptr[conf_len - 1].cmd, val_cmd);
+        cf_ptr[conf_len - 1].is_sftp = is_sftp;
     }
 
-    strcpy(cf.src_dir, val_src_dir);
-    strcpy(cf.dst_dir, val_dst_dir);
-    strcpy(cf.user_pwd, val_user_pwd);
-    strcpy(cf.log, val_log);
-    strcpy(cf.cmd, val_cmd);
-    cf.is_sftp = is_sftp;
+    // final check
+    if(conf_len == 0)
+    {
+        fprintf(stderr, "conf file is not correct, please fix it like this:\n"
+                "[mtt]\n"
+                "src_dir={dir}\n"
+                "dst_dir=ftp://{ip}/{dir}/\n"
+                "user_pwd={user}:{password}\n"
+                "log={dir}\n\n"
+                "[mtt]\n"
+                "src_dir={dir}\n"
+                "dst_dir=ftp://{ip}/{dir}/\n"
+                "user_pwd={user}:{password}\n"
+                "log={dir}\n");
+        exit(-1);
+    }
 }
