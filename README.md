@@ -9,7 +9,7 @@
 3. 如果传输过程中网络异常，做5次重传尝试。
 
 注意：
-* 自己编译libcurl的话默认是不支持sftp的，所以最好是在线安装（yum，apt-get），并且得安装devel版本。
+* 自己编译libcurl的话默认是不支持sftp的，所以最好是在线安装（yum，apt-get），当然，得安装devel版本。
 * 由于inotify监控的是本地文件系统的状态，所以该程序在某些条件下是没法正常运行的：
 <table>
     <tbody>
