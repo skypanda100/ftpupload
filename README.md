@@ -67,12 +67,14 @@
     src_dir={dir}
     dst_dir=ftp://{ip}/{dir}/
     user_pwd={user}:{password}
+    retry={retryNumber}
     log={dir}
     
     [mtt]
     src_dir={dir}
     dst_dir=ftp://{ip}/{dir}/
     user_pwd={user}:{password}
+    retry={retryNumber}
     log={dir}
     ```
 * execute  
