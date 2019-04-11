@@ -6,9 +6,8 @@
 大致流程如下：
 1. 根据conf的配置，一个节点一个子进程。
 2. 利用inotify监控文件是否创建，是否生成完毕，是否有子目录生成，是否有文件被移入。
-3. 一旦有文件处于待传输状态，等待1秒后，再传输，此处是为了避免某些中间文件的传输。
-4. 如果传输过程中网络异常，做重传尝试，重传尝试次数取决于conf中retry的值。
-5. 主进程会检查子进程是否活着，如果死了就再将子进程启动起来。
+3. 如果传输过程中网络异常，做重传尝试，重传尝试次数取决于conf中retry的值。
+4. 主进程会检查子进程是否活着，如果死了就再将子进程启动起来。
 
 注意：
 * 自己编译libcurl的话默认是不支持sftp的，所以最好是在线安装（yum，apt-get），当然，得安装devel版本。
@@ -72,13 +71,15 @@
     user_pwd={user}:{password}
     retry={retryNumber}
     log={dir}
-    
+    ignore=.*\.tmp
+
     [mtt]
     src_dir={dir}
     dst_dir=ftp://{ip}/{dir}/
     user_pwd={user}:{password}
     retry={retryNumber}
     log={dir}
+	ignore=.*\.tmp
     ```
 * execute  
     ```bash

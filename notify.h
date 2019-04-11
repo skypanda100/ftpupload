@@ -14,6 +14,7 @@
 #include <sys/stat.h>
 #include <time.h>
 #include <pthread.h>
+#include <regex.h>
 #include "def.h"
 #include "curlftp.h"
 

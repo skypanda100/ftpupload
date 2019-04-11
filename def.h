@@ -31,6 +31,7 @@ typedef struct st_conf
     char user_pwd[128];
     char log[1024];
     char cmd[256];
+    char ignore[128];
     int retry;
     int is_sftp;
 }conf;

@@ -10,6 +10,32 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 static char **transfer_file_ptr_ptr = NULL;
 static int transfer_file_len = 0;
 
+static int is_ignore_file(const char *ignore_ptr, const char *file_name_ptr)
+{
+    if(strlen(ignore_ptr) == 0)
+    {
+        return 0;
+    }
+
+    regex_t rgx;
+    if(regcomp(&rgx, ignore_ptr, REG_NOSUB) != 0)
+    {
+        LOG("invalid regex pattern!");
+        regfree(&rgx);
+        return 0;
+    }
+
+    if(regexec(&rgx, file_name_ptr, 0, NULL, 0) == 0)
+    {
+        regfree(&rgx);
+        return 1;
+    }
+
+    regfree(&rgx);
+
+    return 0;
+}
+
 static void list_dir(const char *path_ptr, char ***dir_ptr_ptr_ptr, size_t *dirs_len_ptr)
 {
     DIR *d_ptr;
@@ -118,8 +144,8 @@ static void transfer()
 
             if(strlen(file_ptr) > 0)
             {
-                LOG("after 1 second upload %s!", file_ptr);
-                sleep(1);   // 待文件稳定后再上传
+//                LOG("after 1 second upload %s!", file_ptr);
+//                sleep(1);   // 待文件稳定后再上传
                 int code = upload(file_ptr);
                 if(code == UPLOAD_FAILED)
                 {
@@ -258,18 +284,25 @@ void watch(const conf *cf_ptr)
                         {
                             char src_file_path[PATH_MAX] = {0};
                             absolute_path(&ntf, event_ptr->wd, event_ptr->name, src_file_path);
-                            if(strlen(src_file_path) > 0)
+                            if(is_ignore_file(cf.ignore, src_file_path))
                             {
-                                if(pthread_mutex_lock(&mutex) != 0)
+                                LOG("%s is ignore file!", src_file_path);
+                            }
+                            else
+                            {
+                                if(strlen(src_file_path) > 0)
                                 {
-                                    LOG("pthread_mutex_lock failed!");
-                                }
-                                transfer_file_len++;
-                                transfer_file_ptr_ptr = (char **)realloc(transfer_file_ptr_ptr, sizeof(char *) * transfer_file_len);
-                                transfer_file_ptr_ptr[transfer_file_len - 1] = strdup(src_file_path);
-                                if(pthread_mutex_unlock(&mutex) != 0)
-                                {
-                                    LOG("pthread_mutex_unlock failed!");
+                                    if(pthread_mutex_lock(&mutex) != 0)
+                                    {
+                                        LOG("pthread_mutex_lock failed!");
+                                    }
+                                    transfer_file_len++;
+                                    transfer_file_ptr_ptr = (char **)realloc(transfer_file_ptr_ptr, sizeof(char *) * transfer_file_len);
+                                    transfer_file_ptr_ptr[transfer_file_len - 1] = strdup(src_file_path);
+                                    if(pthread_mutex_unlock(&mutex) != 0)
+                                    {
+                                        LOG("pthread_mutex_unlock failed!");
+                                    }
                                 }
                             }
                         }
