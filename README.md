@@ -71,7 +71,7 @@
     user_pwd={user}:{password}
     retry={retryNumber}
     log={dir}
-    ignore=.*\.tmp
+	ignore={regex}
 
     [mtt]
     src_dir={dir}
@@ -79,7 +79,7 @@
     user_pwd={user}:{password}
     retry={retryNumber}
     log={dir}
-	ignore=.*\.tmp
+	ignore={regex}
     ```
 * execute  
     ```bash
