@@ -27,13 +27,13 @@
     </tbody>
     <tbody>
         <tr>
-            <td align="left">监控目录是本地目录并且该目录是共享目录（nfs，ftp等），该目录中的文件在本地生成</td>
+            <td align="left">监控目录是本地目录并且该目录是本地共享出去的目录（nfs，ftp等），该目录中的文件在本地生成</td>
             <td align="center">√</td>
         </tr>
     </tbody>
     <tbody>
         <tr>
-            <td align="left">监控目录是本地目录并且该目录是共享目录（nfs，ftp等），该目录中的文件在其他机器上生成</td>
+            <td align="left">监控目录是本地目录并且该目录是本地共享出去的目录（nfs，ftp等），该目录中的文件在其他机器上生成</td>
             <td align="center">√</td>
         </tr>
     </tbody>
