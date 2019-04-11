@@ -14,14 +14,20 @@ int main(int argc,char **argv)
 {
     daemon(0, 1);
 
+    int *pid_ptr = NULL;
+    int pid_len = 0;
+
     if(argc == 2)
     {
         // get infomation from conf file
         config(argv[1]);
 
+        // alloc memory to process_id_ptr
+        pid_len = conf_len;
+        pid_ptr = (int *)malloc(pid_len * sizeof(int));
+        memset(pid_ptr, 0, pid_len * sizeof(int));
+
         // watch the path and upload
-        int *pid_ptr = (int *)malloc(conf_len * sizeof(int));
-        memset(pid_ptr, 0, sizeof(conf_len * sizeof(int)));
         for(int i = 0;i < conf_len;i++)
         {
             int process_id = fork();
@@ -42,7 +48,27 @@ int main(int argc,char **argv)
 
     for(;;)
     {
-        pause();
+        sleep(30);
+
+        for(int i = 0;i < pid_len;i++)
+        {
+            int pid = *(pid_ptr + i);
+            if(kill(pid, 0) != 0)
+            {
+                printf("pid[%d] is dead, it will be restarted in a few seconds!\n", pid);
+                int process_id = fork();
+                *(pid_ptr + i) = process_id;
+                if(process_id == 0)
+                {
+                    set_process_title(argc, argv, "%s@%d", argv[0], i + 1);
+                    return sub_process(i);
+                }
+            }
+            else
+            {
+                printf("pid[%d] is alive!\n", pid);
+            }
+        }
     }
 
     return 0;
