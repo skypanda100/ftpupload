@@ -42,6 +42,7 @@ int main(int argc,char **argv)
     else
     {
         fprintf(stderr, "argument error, please input absolute path of conf file!\n");
+        exit(-1);
     }
 
     signal(SIGCHLD, sub_quit_signal_handle);

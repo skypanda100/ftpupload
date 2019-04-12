@@ -276,12 +276,14 @@ void config(const char *conf_path_ptr)
                 "dst_dir=ftp://{ip}/{dir}/\n"
                 "user_pwd={user}:{password}\n"
                 "retry={retryNumber}\n"
+                "ignore={regex}\n"
                 "log={dir}\n\n"
                 "[mtt]\n"
                 "src_dir={dir}\n"
                 "dst_dir=ftp://{ip}/{dir}/\n"
                 "user_pwd={user}:{password}\n"
                 "retry={retryNumber}\n"
+                "ignore={regex}\n"
                 "log={dir}\n");
         exit(-1);
     }
