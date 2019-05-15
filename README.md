@@ -62,7 +62,7 @@
     $ make
     ```
 * conf
-
+    节点名mtt固定不变。
     ```bash
     $ cat /root/ftpupload/conf/example.conf
     [mtt]
