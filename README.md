@@ -61,8 +61,7 @@
     $ cmake ..
     $ make
     ```
-* conf
-    节点名mtt固定不变。
+* conf（节点名mtt不能变）
     ```bash
     $ cat /root/ftpupload/conf/example.conf
     [mtt]
