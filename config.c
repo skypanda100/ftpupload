@@ -15,6 +15,7 @@ static char *key_log_ptr = "log";
 static char *key_cmd_ptr = "cmd";
 static char *key_ignore_ptr = "ignore";
 static char *key_retry_ptr = "retry";
+static char *key_rename_ptr = "rename";
 
 static char *l_trim(char *output_ptr, const char *input_ptr)
 {
@@ -53,6 +54,7 @@ void config(const char *conf_path_ptr)
     char val_cmd[256] = {0};
     char val_ignore[128] = {0};
     char val_retry[4] = {0};
+    char val_rename[4] = {0};
     int is_sftp = 0;
     int has_found_node = 0;
     char *buf, *c;
@@ -115,6 +117,8 @@ void config(const char *conf_path_ptr)
                     memset(val_retry, 0, sizeof(val_retry));
                     cf_ptr[conf_len - 1].is_sftp = is_sftp;
                     is_sftp = 0;
+                    cf_ptr[conf_len - 1].can_rename = strlen(val_rename) == 0 ? 0 : atoi(val_rename);
+                    memset(val_rename, 0, sizeof(val_rename));
                 }
                 has_found_node = 1;
                 continue;
@@ -235,6 +239,20 @@ void config(const char *conf_path_ptr)
                     val_o = NULL;
                 }
             }
+            else if(strcmp(key, key_rename_ptr) == 0)
+            {
+                sscanf(++c, "%[^\n]", val_rename);
+                char *val_o = (char *)malloc(strlen(val_rename) + 1);
+                if(val_o != NULL)
+                {
+                    memset(val_o, 0, strlen(val_rename) + 1);
+                    a_trim(val_o, val_rename);
+                    if(val_o && strlen(val_o) > 0)
+                        strcpy(val_rename, val_o);
+                    free(val_o);
+                    val_o = NULL;
+                }
+            }
         }
     }
 
@@ -265,6 +283,7 @@ void config(const char *conf_path_ptr)
         strcpy(cf_ptr[conf_len - 1].ignore, val_ignore);
         cf_ptr[conf_len - 1].retry = strlen(val_retry) == 0 ? 0 : atoi(val_retry);
         cf_ptr[conf_len - 1].is_sftp = is_sftp;
+        cf_ptr[conf_len - 1].can_rename = strlen(val_rename) == 0 ? 0 : atoi(val_rename);
     }
 
     // final check

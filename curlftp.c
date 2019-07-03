@@ -8,7 +8,7 @@ extern conf cf;
 
 static void work_dir(const char *dst_dir_path_ptr, char *location_ptr)
 {
-    sscanf(dst_dir_path_ptr, "%*[^:]://%*[^/]%s", location_ptr);
+    sscanf(dst_dir_path_ptr, "%*[^:]://%*[^/]%*[^a-zA-z0-9]%s", location_ptr);
 }
 
 static int rename_by_cmd(CURL *curl, const char *relative_dst_file_path_ptr, size_t suffix)
@@ -69,7 +69,14 @@ int upload(const char *src_file_path_ptr)
     char relative_dst_file_path[PATH_MAX] = {0};
 
     strcpy(relative_dst_file_path, src_file_path_ptr + strlen(cf.src_dir));
-    sprintf(remote_url, "%s/%s.%ld", cf.dst_dir, relative_dst_file_path, suffix);
+    if(cf.can_rename)
+    {
+        sprintf(remote_url, "%s/%s.%ld", cf.dst_dir, relative_dst_file_path, suffix);
+    }
+    else
+    {
+        sprintf(remote_url, "%s/%s", cf.dst_dir, relative_dst_file_path);
+    }
 
     fp = fopen(src_file_path_ptr, "rb");
     if(NULL == fp)
@@ -103,7 +110,10 @@ int upload(const char *src_file_path_ptr)
     curl_code = curl_easy_perform(curl);
     if(CURLE_OK == curl_code)
     {
-        curl_code = rename_by_cmd(curl, relative_dst_file_path, suffix);
+        if(cf.can_rename)
+        {
+            curl_code = rename_by_cmd(curl, relative_dst_file_path, suffix);
+        }
     }
     curl_easy_cleanup(curl);
     fclose(fp);

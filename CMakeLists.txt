@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.6)
 project(ftpupload)
 
 if (CMAKE_VERSION VERSION_LESS "3.1")

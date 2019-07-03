@@ -34,6 +34,7 @@ typedef struct st_conf
     char ignore[128];
     int retry;
     int is_sftp;
+    int can_rename;
 }conf;
 
 typedef struct st_notification
