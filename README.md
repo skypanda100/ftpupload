@@ -58,8 +58,9 @@
     $ cd /root/ftpupload
     $ mkdir build
     $ cd build
-    $ cmake ..
+    $ cmake -DCMAKE_INSTALL_PREFIX=/usr/local/ ..
     $ make
+    $ sudo make install
     ```
 * conf（节点名mtt不能变）
     ```bash
@@ -82,6 +83,5 @@
     ```
 * execute  
     ```bash
-    $ cd /root/ftpupload/build
-    $ ./ftpupload /root/ftpupload/conf/example.conf
+    $ ftpupload /root/ftpupload/conf/example.conf
     ```

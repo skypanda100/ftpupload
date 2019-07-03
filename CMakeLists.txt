@@ -16,3 +16,7 @@ set(SOURCE_FILES main.c notify.h notify.c def.h config.h config.c curlftp.h curl
 add_executable(ftpupload ${SOURCE_FILES})
 target_link_libraries(ftpupload curl)
 target_link_libraries(ftpupload pthread)
+
+INSTALL(TARGETS ftpupload
+        RUNTIME DESTINATION bin
+        )
