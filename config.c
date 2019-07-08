@@ -127,10 +127,10 @@ void config(const char *conf_path_ptr)
             if((c = strchr(buf, '=')) == NULL)
                 continue;
             memset(key, 0, sizeof(key));
-            sscanf(buf, "%[^=|^ |^\t]", key);
+            sscanf(buf, "%[^= \t]", key);
             if(strcmp(key, key_src_dir_ptr) == 0)
             {
-                sscanf(++c, "%[^\n]", val_src_dir);
+                sscanf(++c, "%[^\n\r]", val_src_dir);
                 char *val_o = (char *)malloc(strlen(val_src_dir) + 1);
                 if(val_o != NULL)
                 {
@@ -144,7 +144,7 @@ void config(const char *conf_path_ptr)
             }
             else if(strcmp(key, key_dst_dir_ptr) == 0)
             {
-                sscanf(++c, "%[^\n]", val_dst_dir);
+                sscanf(++c, "%[^\n\r]", val_dst_dir);
                 char *val_o = (char *)malloc(strlen(val_dst_dir) + 1);
                 if(val_o != NULL)
                 {
@@ -171,7 +171,7 @@ void config(const char *conf_path_ptr)
             }
             else if(strcmp(key, key_user_pwd_ptr) == 0)
             {
-                sscanf(++c, "%[^\n]", val_user_pwd);
+                sscanf(++c, "%[^\n\r]", val_user_pwd);
                 char *val_o = (char *)malloc(strlen(val_user_pwd) + 1);
                 if(val_o != NULL)
                 {
@@ -185,7 +185,7 @@ void config(const char *conf_path_ptr)
             }
             else if(strcmp(key, key_log_ptr) == 0)
             {
-                sscanf(++c, "%[^\n]", val_log);
+                sscanf(++c, "%[^\n\r]", val_log);
                 char *val_o = (char *)malloc(strlen(val_log) + 1);
                 if(val_o != NULL)
                 {
@@ -199,7 +199,7 @@ void config(const char *conf_path_ptr)
             }
             else if(strcmp(key, key_cmd_ptr) == 0)
             {
-                sscanf(++c, "%[^\n]", val_cmd);
+                sscanf(++c, "%[^\n\r]", val_cmd);
                 char *val_o = (char *)malloc(strlen(val_cmd) + 1);
                 if(val_o != NULL)
                 {
@@ -213,7 +213,7 @@ void config(const char *conf_path_ptr)
             }
             else if(strcmp(key, key_ignore_ptr) == 0)
             {
-                sscanf(++c, "%[^\n]", val_ignore);
+                sscanf(++c, "%[^\n\r]", val_ignore);
                 char *val_o = (char *)malloc(strlen(val_ignore) + 1);
                 if(val_o != NULL)
                 {
@@ -227,7 +227,7 @@ void config(const char *conf_path_ptr)
             }
             else if(strcmp(key, key_retry_ptr) == 0)
             {
-                sscanf(++c, "%[^\n]", val_retry);
+                sscanf(++c, "%[^\n\r]", val_retry);
                 char *val_o = (char *)malloc(strlen(val_retry) + 1);
                 if(val_o != NULL)
                 {
@@ -241,7 +241,7 @@ void config(const char *conf_path_ptr)
             }
             else if(strcmp(key, key_rename_ptr) == 0)
             {
-                sscanf(++c, "%[^\n]", val_rename);
+                sscanf(++c, "%[^\n\r]", val_rename);
                 char *val_o = (char *)malloc(strlen(val_rename) + 1);
                 if(val_o != NULL)
                 {
